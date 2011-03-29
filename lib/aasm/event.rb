@@ -23,6 +23,21 @@ class AASM::SupportingClasses::Event
     next_state
   end
 
+  def determine_new_state(obj, to_state=nil, *args)
+    transitions = @transitions.select { |t| t.from == obj.aasm_current_state }
+    raise AASM::InvalidTransition, "Event '#{name}' cannot transition from '#{obj.aasm_current_state}'" if transitions.size == 0
+
+    next_state = nil
+    transitions.each do |transition|
+      next if to_state and !Array(transition.to).include?(to_state)
+      if transition.perform(obj, *args)
+        next_state = to_state || Array(transition.to).first
+        break
+      end
+    end
+    next_state
+  end
+
   def transitions_from_state?(state)
     @transitions.any? { |t| t.from == state }
   end

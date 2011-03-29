@@ -141,13 +141,31 @@ module AASM
     obj
   end
 
+# dsaronin@gmail added  unless skip_callbacks_for_same_state_transitions
+# aasm_state option: :same_state_skip => true IF skip state before/exit
+# callbacks IFF the to/from states are the same
+# default behavior is :same_state_skip => nil, which acts same as non-forked aasm
+# thus invokes before/exit state callbacks.
+
+# unfortunately, the first state call backs: old_state :exit should have this
+# check done as well, but can't because we won't know the new_state until
+# after fire.  we need a method separate from fire which determines the new
+# state.
+
+# kludge: created a non-DRY event.determine_new_state which duplicates event.fire
+# except it doesn't do the execute.  That way the existing aasm code can run,
+# be updated in future. we just duplicate it enough to learn the new_state
+# and figure out if we need the skip callback or not
+
   def aasm_fire_event(name, persist, *args)
     event = self.class.aasm_events[name]
     begin
       old_state = aasm_state_object_for_state(aasm_current_state)
 
+      new_state_name = event.determine_new_state(self, *args)
+      skip_callbacks_for_same_state_transitions = new_state_name && old_state.options[:same_state_skip] && (old_state.name == new_state_name)
 
-      old_state.call_action(:exit, self)
+      old_state.call_action(:exit, self)  unless skip_callbacks_for_same_state_transitions
 
       # new event before callback
       event.call_action(:before, self)
@@ -156,12 +174,12 @@ module AASM
 
       unless new_state_name.nil?
         new_state = aasm_state_object_for_state(new_state_name)
-
+        
         # new before_ callbacks
-        old_state.call_action(:before_exit, self)
-        new_state.call_action(:before_enter, self)
+        old_state.call_action(:before_exit, self)  unless skip_callbacks_for_same_state_transitions
+        new_state.call_action(:before_enter, self) unless skip_callbacks_for_same_state_transitions
 
-        new_state.call_action(:enter, self)
+        new_state.call_action(:enter, self) unless skip_callbacks_for_same_state_transitions
 
         persist_successful = true
         if persist
@@ -172,8 +190,8 @@ module AASM
         end
 
         if persist_successful
-          old_state.call_action(:after_exit, self)
-          new_state.call_action(:after_enter, self)
+          old_state.call_action(:after_exit, self) unless skip_callbacks_for_same_state_transitions
+          new_state.call_action(:after_enter, self) unless skip_callbacks_for_same_state_transitions
           event.call_action(:after, self)
 
           self.aasm_event_fired(name, old_state.name, self.aasm_current_state) if self.respond_to?(:aasm_event_fired)
