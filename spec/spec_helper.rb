@@ -5,6 +5,15 @@ require 'aasm'
 require 'rspec'
 require 'rspec/autorun'
 
-RSpec.configure do |config|
-  
+# require 'ruby-debug'; Debugger.settings[:autoeval] = true; debugger; rubys_debugger = 'annoying'
+# require 'ruby-debug/completion'
+
+def load_schema
+  config = YAML::load(IO.read(File.dirname(__FILE__) + '/database.yml'))
+  ActiveRecord::Base.logger = Logger.new(File.dirname(__FILE__) + "/debug.log")
+  ActiveRecord::Base.establish_connection(config['sqlite3'])
+  load(File.dirname(__FILE__) + "/schema.rb")
 end
+
+# Requiring custom spec helpers
+Dir[File.dirname(__FILE__) + "/spec_helpers/**/*.rb"].sort.each { |f| require File.expand_path(f) }

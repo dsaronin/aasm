@@ -1,63 +1,5 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
-class Foo
-  include AASM
-  aasm_initial_state :open
-  aasm_state :open, :exit => :exit
-  aasm_state :closed, :enter => :enter
-
-  aasm_event :close, :success => :success_callback do
-    transitions :to => :closed, :from => [:open]
-  end
-
-  aasm_event :null do
-    transitions :to => :closed, :from => [:open], :guard => :always_false
-  end
-
-  def always_false
-    false
-  end
-
-  def success_callback
-  end
-
-  def enter
-  end
-  def exit
-  end
-end
-
-class FooTwo < Foo
-  include AASM
-  aasm_state :foo
-end
-
-class Bar
-  include AASM
-
-  aasm_state :read
-  aasm_state :ended
-
-  aasm_event :foo do
-    transitions :to => :ended, :from => [:read]
-  end
-end
-
-class Baz < Bar
-end
-
-class Banker
-  include AASM
-  aasm_initial_state  Proc.new { |banker| banker.rich? ? :retired : :selling_bad_mortgages }
-  aasm_state          :retired
-  aasm_state          :selling_bad_mortgages
-  RICH = 1_000_000
-  attr_accessor :balance
-  def initialize(balance = 0); self.balance = balance; end
-  def rich?; self.balance >= RICH; end
-end
-
-
 describe AASM, '- class level definitions' do
   it 'should define a class level aasm_initial_state() method on its including class' do
     Foo.should respond_to(:aasm_initial_state)
@@ -85,6 +27,20 @@ describe AASM, '- class level definitions' do
 
 end
 
+describe "naming" do
+  it "work for valid" do
+    Argument.aasm_states.should include(:invalid)
+    Argument.aasm_states.should include(:valid)
+
+    argument = Argument.new
+    argument.invalid?.should be_true
+    argument.aasm_current_state.should == :invalid
+
+    argument.valid!
+    argument.valid?.should be_true
+    argument.aasm_current_state.should == :valid
+  end
+end
 
 describe AASM, '- subclassing' do
   it 'should have the parent states' do
@@ -293,10 +249,10 @@ describe AASM, '- event callbacks' do
       @foo.stub!(:enter).and_raise(StandardError)
       lambda{@foo.safe_close!}.should raise_error(NoMethodError)
     end
-    
+
     it "should propagate an error if no error callback is declared" do
         @foo.stub!(:enter).and_raise("Cannot enter safe")
-        lambda{@foo.close!}.should raise_error(StandardError, "Cannot enter safe")  
+        lambda{@foo.close!}.should raise_error(StandardError, "Cannot enter safe")
     end
   end
 

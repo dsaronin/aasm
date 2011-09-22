@@ -1,72 +1,64 @@
-= Alternatives
-
-If you are looking for an alternative to AASM, I would highly suggest transitions: http://github.com/qoobaa/transitions
-
-= AASM - Ruby state machines
+# AASM - Ruby state machines #
 
 This package contains AASM, a library for adding finite state machines to Ruby classes.
 
 AASM started as the acts_as_state_machine plugin but has evolved into a more generic library that no longer targets only ActiveRecord models.
 
-AASM has the following features:
+## Features ##
 
 * States
 * Machines
 * Events
 * Transitions
 
-== New Callbacks
+## New Callbacks ##
 
 The callback chain & order on a successful event looks like:
 
-  oldstate:exit*
-  event:before
-  __find transition, if possible__
-  transition:on_transition*
-  oldstate:before_exit
-  newstate:before_enter
-  newstate:enter*
-  __update state__
-  event:success*
-  oldstate:after_exit
-  newstate:after_enter
-  event:after
-  obj:aasm_event_fired*
+    oldstate:exit*
+      event:before
+        __find transition, if possible__
+        transition:on_transition*
+          oldstate:before_exit
+            newstate:before_enter
+              newstate:enter*
+              __update state__
+              event:success*
+            oldstate:after_exit
+          newstate:after_enter
+      event:after
+    obj:aasm_event_fired*
 
-  (*) marks old callbacks
+    (*) marks old callbacks
 
 
-== Download
+## Download ##
 
 The latest AASM can currently be pulled from the git repository on github.
 
 * http://github.com/rubyist/aasm/tree/master
 
 
-== Installation
+## Installation ##
 
-=== From gemcutter
+### From RubyGems.org ###
 
-  % sudo gem install gemcutter
-  % sudo gem tumble
-  % sudo gem install aasm
+```sh
+% gem install aasm
+```
 
-=== From GitHub hosted gems (only older releases are available)
+### Building your own gems ###
 
-  % sudo gem sources -a http://gems.github.com # (you only need to do this once)
-  % sudo gem install rubyist-aasm
+```sh
+% rake build
+% sudo gem install pkg/aasm-x.y.z.gem
+```
 
-=== Building your own gems
-
-  % rake gemspec
-  % rake build
-  % sudo gem install pkg/aasm-2.1.gem
-
-
-== Simple Example
+## Simple Example ##
 
 Here's a quick example highlighting some of the features.
 
+```ruby
   class Conversation
     include AASM
 
@@ -87,11 +79,13 @@ Here's a quick example highlighting some of the features.
       transitions :to => :closed, :from => [:read, :unread]
     end
   end
+```
 
-== A Slightly More Complex Example
+## A Slightly More Complex Example ##
 
 This example uses a few of the more complex features available.
 
+```ruby
   class Relationship
     include AASM
 
@@ -121,15 +115,33 @@ This example uses a few of the more complex features available.
     def give_up_intimacy; end
     def buy_exotic_car_and_wear_a_combover; end
   end
+```
 
-= Other Stuff
+## Callbacks around events
+```ruby
+  class Relationship
+    include AASM
+
+    aasm_state :dating
+    aasm_state :married
+
+    aasm_event :get_married,
+      :before => :make_vows,
+      :after => :eat_wedding_cake do
+      transitions :to => :married, :from => [:dating]
+    end
+  end
+```
+
+
+# Other Stuff #
 
 Author::  Scott Barron <scott at elitists dot net>
 License:: Original code Copyright 2006, 2007, 2008 by Scott Barron.
           Released under an MIT-style license.  See the LICENSE  file
           included in the distribution.
 
-== Warranty
+## Warranty ##
 
 This software is provided "as is" and without any express or
 implied warranties, including, without limitation, the implied
