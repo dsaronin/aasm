@@ -115,13 +115,14 @@ module AASM
 
         protected
         def with_state_scope(state)
-          with_scope :find => { -> { where( ["#{table_name}.#{aasm_column} = ?", state.to_s] ) } } do
+          where( ["#{table_name}.#{aasm_column} = ?", state.to_s] )  do
             yield if block_given?
           end
         end
       end
 
 # DEPRECATED dsa Rails 4.0.2: with_scope :find => {:conditions => ["#{table_name}.#{aasm_column} = ?", state.to_s]} do
+
       module InstanceMethods
 
         # Returns the current aasm_state of the object.  Respects reload and
@@ -247,11 +248,13 @@ module AASM
           
           unless self.respond_to?(name)
             scope_options = -> { where( "#{table_name}.#{self.aasm_column}" => name.to_s ) }
-            scope_method = ActiveRecord::VERSION::MAJOR >= 3 ? :scope : :named_scope
-            self.send(scope_method, name, scope_options)
+            self.send( :scope , name, scope_options)
           end
 
 # DEPRECATED dsa Rails 4.0.2   scope_options = {:conditions => { "#{table_name}.#{self.aasm_column}" => name.to_s}}
+#       scope_options = -> { where( "#{table_name}.#{self.aasm_column}" => name.to_s ) }
+#       scope_method = ActiveRecord::VERSION::MAJOR >= 3 ? :scope : :named_scope
+#       self.send(scope_method, name, scope_options)
           
         end
       end
